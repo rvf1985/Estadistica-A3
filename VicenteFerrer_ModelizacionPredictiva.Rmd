@@ -1,7 +1,7 @@
 ---
-title: 'Estadística Avanzada: A2 - Analítica descriptiva e inferencial'
+title: 'Estadística Avanzada: A3 - Modelización predictiva'
 author: "Autor: Raúl Vicente Ferrer"
-date: "Noviembre 2021"
+date: "Diciembre 2021"
 output:
   html_document:
     highlight: default
@@ -28,15 +28,64 @@ if (!require('ggplot2')) install.packages('ggplot2'); library('ggplot2')
 if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
 # https://cran.r-project.org/web/packages/dplyr/index.html
 if (!require('knitr')) install.packages('knitr'); library('knitr')
-# https://cran.r-project.org/web/packages/dplyr/index.html
-if (!require('kableExtra')) install.packages('kableExtra'); library('kableExtra')
-# https://cran.r-project.org/web/packages/nortest/index.html
-if (!require('nortest')) install.packages('nortest'); library('nortest')
 ```
 
 ******
-# Lectura del fichero y preparación de los datos
+# Regresión lineal
 ******
+
+## Estudio de correlación lineal
+
+* Diagrama de caja de la distribución de la variable 'UltCost':
+
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./dat_Air.csv", header=TRUE) 
+```
+
+```{r message= FALSE, warning=FALSE}
+str(claim)
+summary(claim)
+```
+
+## Modelo de regresión lineal
+
+* Diagrama de caja de la distribución de la variable 'UltCost':
+
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```
+
+## Modelo de regresión lineal múltiple
+
+* Diagrama de caja de la distribución de la variable 'UltCost':
+
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```
+
+## Diagnosis del modelo
+
+* Diagrama de caja de la distribución de la variable 'UltCost':
+
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```
+
+## Predicción del modelo
+
+* Diagrama de caja de la distribución de la variable 'UltCost':
+
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```
+
+******
+# Regresión logística
+******
+
+## Estudio de relaciones entre variables. Análisis crudo de posibles factores de riesgo
+
+* Diagrama de caja de la distribución de la variable 'UltCost':
 
 ```{r message= FALSE, warning=FALSE}
 claim <- read.csv("./train_clean2.csv", header=TRUE) 
@@ -47,484 +96,43 @@ str(claim)
 summary(claim)
 ```
 
-******
-# Coste de los siniestros  
-******
-
-## Análisis visual
+## Modelo de regresión logística
 
 * Diagrama de caja de la distribución de la variable 'UltCost':
 
-```{r}
-boxplot(claim$UltCost, main="UltCost")
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
 ```
 
-* Transformación a escala logarítmica de la variable 'UltCost' y diagrama de caja:
+## Predicción
 
-```{r}
-logUltCost <- log(claim$UltCost)
-boxplot(logUltCost, main="Log UltCost")
+* Diagrama de caja de la distribución de la variable 'UltCost':
+
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
 ```
 
-* Interpretación de los gráficos:
-El primer gráfico presenta una fuerte asimetría a la izquierda.
-Trás aplicar la transformación logarítmica, podemos ver que los valores se distribuyen entre 2 y 13.
+## Bondad del ajuste
 
+* Diagrama de caja de la distribución de la variable 'UltCost':
 
-## Comprobación de normalidad
-
-* Inspección visual de la normalidad de la variable 'UltCost':
-
-Un gráfico Q-Q normal nos muestra como se aproximan estos datos a una distribución normal:
-
-```{r}
-qqnorm(claim$UltCost, main = "", xlab = "Cuantiles teóricos", ylab = "Cuantiles muestrales")
-qqline(claim$UltCost)
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
 ```
 
-Se observa que no siguen una distribución normal.
-Esto es más fácil de visualizar con un histograma de densidad y una curva de distribución normal superpuesta:
+## Curva ROC
 
-```{r}
-hist(claim$UltCost, probability = TRUE, main = "UltCost", xlab = "Población", ylab = "Densidad",  breaks=20)
-x   <- seq(min(claim$UltCost), max(claim$UltCost), length = 1000)
-y <- dnorm(x, mean(claim$UltCost), sd(claim$UltCost))
-lines(x, y, col = "blue")
-```
+* Diagrama de caja de la distribución de la variable 'UltCost':
 
-* Contraste de normalidad de Lilliefors:
-
-```{r}
-lillie.test(claim$UltCost)
-```
-
-Como p-value es menor de 0.05 se rechaza la hipótesis de normalidad.
-
-* Inspección visual y contraste de la normalidad de la variable 'UltCost' en escala logarítmica:
-
-Un gráfico Q-Q normal nos muestra como se aproximan estos datos a una distribución normal:
-
-```{r}
-qqnorm(logUltCost, main = "", xlab = "Cuantiles teóricos", ylab = "Cuantiles muestrales")
-qqline(logUltCost)
-```
-
-Se observa que siguen una distribución normal.
-Esto es más fácil de visualizar con un histograma de densidad y una curva de distribución normal superpuesta:
-
-```{r}
-hist(logUltCost, probability = TRUE, main = "LogUltCost", xlab = "Población", ylab = "Densidad",  breaks=20)
-x   <- seq(min(logUltCost), max(logUltCost), length = 1000)
-y <- dnorm(x, mean(logUltCost), sd(logUltCost))
-lines(x, y, col = "red")
-```
-
-Contraste de normalidad de Lilliefors:
-
-```{r}
-lillie.test(logUltCost)
-```
-
-Como p-value es mayor de 0.05 se acepta la hipótesis de normalidad.
-
-## Intervalo de confianza de la media poblaciona de la variable 'UltCost'
-
-* Cálculo manual del intervalo de confianza al 95% de la media poblacional de la variable 'UltCost':
-
-Intervalo de confianza:
-```{r}
-n <- nrow(claim)
-alpha <- (1-0.95)
-SE <- sd(claim$UltCost) / sqrt(n)
-t <- qnorm(alpha/2, lower.tail=FALSE)
-L <- mean(claim$UltCost) - t*SE
-U <- mean(claim$UltCost) + t*SE
-c(L,U)
-```
-
-* ¿Podemos asumir la hipótesis de normalidad para el cálculo del intervalo de confianza sobre la media muestral del coste en escala original?
-
-El Teorema del Límite Central (TLC) establece que el contraste de hipótesis sobre la media de una muestra se aproxima a una distribución normal aunque la población original no siga una distribución normal, siempre que el tamaño de la muestra sea suficientemente grande, es decir, mayor de 30. Así que, en este caso, se cumple el TLC y por o tanto podemos asumir la hipótesis de normalidad para el cálculo del intervalo de confianza sobre la media muestral.
-
-* Interpretación del intervalo de confianza:
-
-Si obtenemos infinitas muestras del conjunto de datos, el 95% de los intervalos de confianza calculados a partir de esas muestras contendrían el valor medio del coste.
-
-******
-# Coste inicial y final de los siniestros  
-******
-
-¿Podemos aceptar que no hay diferencias entre IniCost y UltCost?
-
-## Justificación del test a aplicar
-
-Por el teorema del límite central, podemos asumir normalidad y se desea realizar un test sobre la media.
-
-Como no se conoce la varianza de la población aplicamos la distribución t, 
-
-Se trata de un contraste de dos muestras emparejadas sobre la media con varianzas desconocidas y bilateral.Ya que queremos comparar dos muestras que están univocamente relacionadas.
-
-## Hipótesis nula y alternativa
-
-$H_0: µ_d = 0$
-
-$H_1: µ_d \neq 0$
-
-## Cálculos
-
-```{r}
-testhipotesis <- function (m1, m2, NConf=0.95, paired=TRUE, var.equal=TRUE, alternative="two.sided") {
-  alpha <- (1-NConf)
-  mean1 <- mean(m1)
-  n1 <- length(m1)
-  sd1 <- sd(m1)
-  mean2 <- mean(m2)
-  n2 <- length(m2)
-  sd2 <- sd(m2)
-  diff <- m1-m2
-  nD <- length(diff)
-  meanD <- mean(diff)
-  sD <- sd(diff)
-  #paired==TRUE
-  if (paired==TRUE){
-    t <- abs(meanD/(sD/sqrt(nD)))
-    #alternative=="two.sided"
-    if (alternative=="two.sided"){
-      tcritical <- qt(alpha/2, df=nD-1, lower.tail=FALSE)
-      pvalue <- pt(abs(t), df=nD-1, lower.tail=FALSE)*2
-    }
-    #alternative=="less"
-    else if (alternative=="less"){
-      tcritical <- qt(alpha, df=nD-1, lower.tail=TRUE)
-      pvalue <- pt(abs(t), df=nD-1, lower.tail=TRUE)
-    }
-    #alternative=="greater"
-    else{
-      tcritical <- qt(alpha, df=nD-1, lower.tail=FALSE)
-      pvalue <- pt(abs(t), df=nD-1, lower.tail=FALSE)
-    }
-    result <- data.frame(t, tcritical, pvalue)
-    result %>% kable() %>% kable_styling()
-  }
-  #paired==FALSE
-  else{
-    #var.equal==TRUE
-    if (var.equal==TRUE){
-      s <- sqrt(((n1-1)*sd1^2+(n2-1)*sd2^2)/(n1+n2-2))
-      Sb <- s*sqrt(1/n1 + 1/n2)
-      df <- n1+n2-2
-    }
-    #var.equal==FALSE
-    else{
-      Sb <- sqrt(sd1^2/n1 + sd2^2/n2)
-      df <- ((sd1^2/n1 + sd2^2/n2)^2)/((sd1^2/n1)^2/(n1-1)+(sd2^2/n2)^2/(n2-1))
-    }
-    t <- abs((mean1-mean2)/Sb)
-    #alternative=="two.sided"
-    if (alternative=="two.sided"){
-      tcritical <- qt(alpha/2, df, lower.tail=FALSE)
-      pvalue <- pt(abs(t), df, lower.tail=FALSE )*2
-    }
-    #alternative=="less"
-    else if (alternative=="less"){
-      tcritical <- qt(alpha, df, lower.tail=TRUE)
-      pvalue <- pt(t, df, lower.tail=TRUE)
-    }
-    #alternative=="greater"
-    else{
-      tcritical <- qt(alpha, df, lower.tail=FALSE)
-      pvalue <- pt(t, df, lower.tail=FALSE)
-    }
-    result <- data.frame(t, tcritical, pvalue)
-    result %>% kable() %>% kable_styling()
-  }
-  return(result)
-}
-
-result3<-testhipotesis(claim$UltCost, claim$IniCost, paired=TRUE, var.equal=FALSE, alternative = "two.sided")
-result3
-```
-
-## Conclusión
-
-El valor crítico para un nivel de confianza del 95% es 1.960011	 y el valor observado es 20.80108. Por lo tanto, nos encontramos en la zona de rechazo de la hipótesis nula y podemos concluir que hay diferencias entre IniCost y UltCost. Se concluye lo mismo con el valor p, que da un valor de 1.067535 × 10^−95^, muy inferior a alpha=0.05.
-
-## Comprobación
-
-```{r}
-t.test(claim$UltCost, claim$IniCost, var.equal=FALSE, paired=TRUE, alternative = "two.sided")
-```
-
-Los valores coinciden.
-
-******
-# Diferencia de salario según género  
-******
-
-## Análisis visual
-
-* Diagrama de caja de la distribución de la variable WeeklyWages según el género
-
-```{r}
-Mujeres <- claim[claim$Gender=="F",]
-Hombres <- claim[claim$Gender=="M",]
-
-boxplot(log(Mujeres$WeeklyWages), log(Hombres$WeeklyWages), names=c("Mujeres","Hombres"), main="Sueldo" )
-```
-
-## Interpretación
-
-Se observan pequeñas diferencias entre sueldos, el límite inferior de los sueldos es menor en mujeres, pero el superior parece ser superior. Es necesario recurrir a un contraste de hipótesis para confirmar si estas diferencias observadas son significativas.
-
-## Hipótesis nula y alternativa
-
-¿Podemos aceptar que los hombres cobran más que las mujeres en promedio a la semana?
-
-$H_0: µ_H = µ_M$
-
-$H_1: µ_H > µ_M$
-
-## Justificación del test a aplicar
-
-Por el teorema del límite central, podemos asumir normalidad y se desea realizar un test sobre la media.
-
-Como no se conoce la varianza de la población aplicamos la distribución t, 
-
-Comprobamos igualdad de varianzas:
-
-```{r}
-testvar <- function (m1, m2, NConf=0.95) {
-  alpha <- (1-NConf)
-  mean1 <- mean(m1)
-  n1 <- length(m1)
-  sd1 <- sd(m1)
-  mean2 <- mean(m2)
-  n2 <- length(m2)
-  sd2 <- sd(m2)
-
-  f <- sd1^2/sd2^2
-  fcritL <- qf(alpha/2, df1=n1-1, df2=n2-2)
-  fcritU <- qf(1-alpha/2, df1=n1-1, df2=n2-2)
-  pvalue <- min(pf(f, df1=n1-1, df2=n2-2, lower.tail=FALSE), pf(f, df1=n1-1, df2=n2-2))*2
-
-  result <- data.frame(f, fcritL, fcritU, pvalue)
-  result %>% kable() %>% kable_styling()
-  
-  return(result)
-}  
-testvar(Hombres$WeeklyWages, Mujeres$WeeklyWages, NConf=0.95)
-var.test(Hombres$WeeklyWages, Mujeres$WeeklyWages)
-```
-
-p<0.001, por lo que descartamos igualdad de varianzas.
-
-Se trata de un contraste de dos muestras independientes sobre la media con varianzas desconocidas y unilateral por la derecha.
-
-## Cálculos
-
-Ya se implementó una función en el ejercicio 3 que se puede utilizar en este caso también, en lugar de repetir el código. El resultado que arroja es:
-
-```{r warning=FALSE}
-result4<-testhipotesis(Hombres$WeeklyWages, Mujeres$WeeklyWages, paired=FALSE, var.equal=FALSE, alternative = "greater")
-result4
-```
-
-## Conclusión
-
-El valor crítico para un nivel de confianza del 95% es 1.644922	 y el valor observado es 28.8127. Por lo tanto, nos encontramos en la zona de rechazo de la hipótesis nula y podemos concluir que hay diferencias entre los salarios de hombres y mujeres. Se concluye lo mismo con el valor p, que da un valor de 1.437086 × 10^−179^, muy inferior a alpha=0.05. Así que estamos en la zona a favor de la hipótesis alternativa y podemos aceptar que los hombres cobran más que las mujeres en promedio a la semana. 
-
-## Comprobación
-
-```{r}
-t.test(Hombres$WeeklyWages, Mujeres$WeeklyWages, var.equal=FALSE, paired=FALSE, alternative = "greater")
-```
-
-Se obtiene el mismo resultado.
-
-******
-# Salario semanal (II)  
-******
-
-¿Podemos aceptar que los hombres cobran al menos 50 euros más que las mujeres en promedio a la semana?
-
-## Hipótesis nula y alternativa
-
-$H_0: µ_H - µ_M = 50$
-
-$H_1: µ_H - µ_M > 50$
-
-## Justificación del test a aplicar
-
-Por el teorema del límite central, podemos asumir normalidad y se desea realizar un test sobre la media.
-
-Como no se conoce la varianza de la población aplicamos la distribución t, 
-
-Comprobamos igualdad de varianzas:
-
-```{r}
-testvar(Hombres$WeeklyWages-50, Mujeres$WeeklyWages, NConf=0.95)
-var.test(Hombres$WeeklyWages-50, Mujeres$WeeklyWages)
-```
-
-p<0.001, por lo que descartamos igualdad de varianzas.
-
-Se trata de un contraste de dos muestras independientes sobre la media con varianzas desconocidas y unilateral por la derecha.
-
-## Cálculos
-
-```{r warning=FALSE}
-result5<-testhipotesis(Hombres$WeeklyWages-50, Mujeres$WeeklyWages, paired=FALSE, var.equal=FALSE, alternative = "greater")
-result5
-```
-
-## Conclusión
-
-El valor crítico para un nivel de confianza del 95% es 1.644922 y el valor observado es 7.647497. Por lo tanto, nos encontramos en la zona de rechazo de la hipótesis nula y podemos concluir que la diferencia que hay entre los salarios de hombres y mujeres es mayor de 50. Se concluye lo mismo con el valor p, que da un valor de 1.066063 × 10^−14^, muy inferior a alpha=0.05. Así que estamos en la zona a favor de la hipótesis alternativa y podemos aceptar que los hombres cobran al menos 50 euros más que las mujeres en promedio a la semana.
-
-## Comprobación
-
-```{r}
-t.test(Hombres$WeeklyWages-50, Mujeres$WeeklyWages, var.equal=FALSE, paired=FALSE, alternative = "greater")
-```
-
-Se obtiene el mismo resultado.
-
-******
-# Diferencia de jornada según género 
-******
-
-## Análisis visual
-
-* Diagrama de barras con los porcentajes de cada categoría de la variable ParTimeFullTime según el género
-
-```{r}
-claim2 <- claim[!(claim$Gender=="U"),]
-claim2$Gender <- as.factor(claim2$Gender)
-claim2$PartTimeFullTime <- as.factor(claim2$PartTimeFullTime)
-tab <- table(claim2$Gender, claim2$PartTimeFullTime)
-tab2 <- prop.table(tab, 2)
-barplot(tab2*100,
-        main = "Distribución del tipo de jornada según género",
-        ylab = "Frecuencias relativas (%)",
-        xlab = "PartTimeFullTime",
-        legend = T,
-        col = c("aquamarine3", "coral"),
-        beside = TRUE)
-```
-
-## Interpretación
-
-El número total de hombres que trabaja a tiempo completo es muy superior que número total de mujeres, y ocurre al revés para el tiempo parcial.
-Pero el número de registros masculinos es muy superior al de mujeres, así que lo que habría que estudiar es la proporción de cada grupo.
-
-## Hipótesis y alternativa
-
-¿La proporción de personas que trabajan a tiempo completo es diferente para hombres que para mujeres?
-
-$H_0: p_H = p_M$
-
-$H_1: p_H \neq p_M$
-
-## Tipo de test
-
-Se trata de un contraste de dos muestras independientes sobre la proporción. Ya que necesitamos plantear un contraste entre proporciones.
-Usaremos un nivel de confianza del 95% ya que no se especifica otro en el enunciado.
-
-## Cálculos
-
-```{r}
-alpha = 1-0.95
-n1 <- length(Hombres$PartTimeFullTime)
-n2 <- length(Mujeres$PartTimeFullTime)
-p1 <- sum(Hombres$PartTimeFullTime=='F')/n1
-p2 <- sum(Mujeres$PartTimeFullTime=='F')/n2
-p <- (n1*p1+n2*p2)/(n1+n2)
-z <- (p1-p2)/(sqrt(p*(1-p)*(1/n1+1/n2)))
-zcritical <- qnorm(alpha/2)
-pvalue<- pnorm(abs(z), lower.tail=FALSE)*2
-result6 <- data.frame(z, zcritical, pvalue)
-result6
-```
-
-## Conclusión
-
-El valor crítico para un nivel de confianza del 95% es 1.959964 y el valor observado es 57.3423. Por lo tanto, nos encontramos en la zona de rechazo de la hipótesis nula. Se concluye lo mismo con el valor p, que da un valor de 1.066063 × 10^−14^, muy inferior a alpha=0.05. Así que estamos en la zona a favor de la hipótesis alternativa y y podemos concluir que la proporción de hombres y mujeres que trabajan a jornada completa es diferente.
-
-## Comprobación
-
-```{r}
-success <- c( p1*n1, p2*n2)
-nn <- c(n1,n2)
-prop.test(success, nn, alternative="two.sided", correct=FALSE)
+```{r message= FALSE, warning=FALSE}
+claim <- read.csv("./train_clean2.csv", header=TRUE) 
 ```
 
 ******
-# Salario por hora 
+# Conclusiones del análisis
 ******
 
-¿Podemos afirmar que los hombres cobran más que las mujeres por hora trabajada?
-
-## Hipótesis nula y alternativa
-
-$H_0: µ_H = µ_M$
-
-$H_1: µ_H > µ_M$
-
-## Tipo de test
-
-Por el teorema del límite central, podemos asumir normalidad y se desea realizar un test sobre la media.
-
-Como no se conoce la varianza de la población aplicamos la distribución t, 
-
-Comprobamos igualdad de varianzas:
-
-```{r}
-claim3 <- claim
-claim3$HourlyWages = claim3$WeeklyWages/claim3$HoursWeek
-Mujeres <- claim3[claim3$Gender=="F",]
-Hombres <- claim3[claim3$Gender=="M",]
-testvar(Hombres$HourlyWages, Mujeres$HourlyWages, NConf=0.95)
-var.test(Hombres$HourlyWages, Mujeres$HourlyWages)
-```
-
-p<0.001, por lo que descartamos igualdad de varianzas.
-
-Por lo tanto, el test a realizar es un contraste de dos muestras independientes sobre la media con varianzas desconocidas.
-
-## Cálculos
-
-```{r message=FALSE, warning=FALSE}
-result7<-testhipotesis(Hombres$HourlyWages, Mujeres$HourlyWages, paired=FALSE, var.equal=FALSE, alternative = "greater")
-result7
-```
-
-## Conclusión
-
-El valor crítico para un nivel de confianza del 95% es 1.644948	 y el valor observado es 0.7098522. Por lo tanto, nos encontramos en la zona de aceptación de la hipótesis nula y podemos concluir que los hombres no cobran más que las mujeres por hora trabajada. Se concluye lo mismo con el valor p, que da un valor de 0.238903, superior a alpha=0.05.
-
-## Comprobación
-
-```{r}
-t.test(Hombres$HourlyWages, Mujeres$HourlyWages, paired=FALSE, var.equal=FALSE, alternative = "greater")
-```
-
-Los valores coinciden.
-
-******
-# Resumen ejecutivo 
-******
-
-* Si obtenemos infinitas muestras del conjunto de datos, el 95% de los intervalos de confianza calculados a partir de esas muestras contendrían el valor medio de la variable (UltCost) (coste)
-
-* Podemos afirmar que no se puede aceptar que la estimación inicial del coste y el coste total pagado no presentan diferencias, con un nivel de confianza del 95%.
-
-* Al comparar la muestra de hombres con la de mujeres, podemos concluir que los hombres cobran más que las mujeres en promedio a la semana, con un nivel de confianza del 95%.
-
-* A continuación, comparando la diferencia de promedio de salario a la semana entre hombres y mujeres, podemos concluir que la diferencia que existe es mayor de 50, con un nivel de confianza del 95%.
-
-* Siguiendo con el estudio, se puede afirmar que la proporción de hombres y mujeres que trabajan a jornada completa es diferente, con un nivel de confianza del 95%.
-
-* Por último, estudiando las ganancias por hora, se puede afirmar que los hombres no cobran más que las mujeres por hora trabajada, con un nivel de confianza del 95%.
+* Diagrama de caja de la distribución de la variable 'UltCost':
 
 ******
 # Bibliografía
