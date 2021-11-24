@@ -69,7 +69,7 @@ corrplot(M, method = "number")
 
 * ¿Cual de los contaminantes atmosféricos citados anteriormente, tienen una mayor relación lineal con la RS? Interpretar las relaciones de dicho contaminante con la RS y también con el resto de variables meteorológicas.
 El contaminante atmosférico que tiene una mayor relación lineal con RS es O3 ya que, como se puede observar en la matriz de correlación, su coeficiente es el mayor (en valor absoluto). La relación que tienen es en sentido directo y de magnitud débil.
-TMP: relación en sentido directo y de magnitud débil.
+Tmp: relación en sentido directo y de magnitud débil.
 HR: relación en sentido inverso y de magnitud débil.
 Vel: relación en sentido directo y de magnitud moderada.
 Dir_Aire: relación en sentido inverso y de magnitud débil.
@@ -210,21 +210,206 @@ Se obtiene un valor de 37.10378 𝜇𝑔/𝑚3.
 # Regresión logística
 ******
 
-## Estudio de relaciones entre variables. Análisis crudo de posibles factores de riesgo
+Estudio de la concentración de O3 del aire de una determinada ciudad.
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+Primera codificación de la variable icO3:
 
 ```{r}
-
+df <- read.csv("./dat_Air.csv", header=TRUE)
+icO3 <- cut(df$O3, breaks = c(0, 80, 100),
+                labels = c("buena", "mejorable"),
+                right = FALSE)
+df_2a <- data.frame(df, icO3)
 ```
+
+Segunda codificación de la variable icO3:
+
+```{r}
+df_2b <- df_2a
+df_2b$icO3 <- as.numeric(df_2b$icO3)
+df_2b$icO3[df_2b$icO3 == "1"] = 0
+df_2b$icO3[df_2b$icO3 == "2"] = 1
+df_2b$icO3[is.na(df_2b$icO3)] = 1
+df_2b$icO3 <- as.factor(df_2b$icO3)
+summary(df_2b$icO3)
+```
+
+## Estudio de relaciones entre variables. Análisis crudo de posibles factores de riesgo
+
+* Se visualiza la relación entre icO3 y las variables independientes: RS, Vel y HR. Para ello se recodificaran las variables RS y Vel, dejando la variable cuantitativa HR, tal como está en la base de datos. Para comprobar si existe asociación entre las variable dependiente y cada una de las variables explicativas, se aplicará el test Chi-cuadrado de Pearson. Un resultado significativo nos dirá que existe asociación.
+
+Codificación de las variables RS_cat2 y Vel_cat2:
+
+```{r}
+RS_cat2 <- cut(df_2b$RS, breaks = c(0, 100, 700),
+                labels = c("normal_baja", "normal_alta"),
+                right = FALSE)
+Vel_cat2 <- cut(df_2b$Vel, breaks = c(0, 3, 10),
+                labels = c("flojo", "moderado"),
+                right = FALSE)
+df_2b <- data.frame(df_2b, RS_cat2, Vel_cat2)
+```
+
+Visualización y test Chi-cuadrado de Pearson de la relación icO3 - RS_cat2:
+
+```{r}
+tr<-table(df_2b$icO3,df_2b$RS_cat2)
+tr
+```
+
+```{r}
+tr_rel<-prop.table(tr,1)
+tr_rel
+```
+
+```{r}
+tr_rel_col<-prop.table(tr,2)
+tr_rel_col
+```
+
+```{r}
+barplot(tr_rel_col)
+```
+
+```{r}
+chi.test.tr<-chisq.test(tr)
+print(chi.test.tr)
+```
+
+Visualización y test Chi-cuadrado de Pearson de la relación icO3 - Vel_cat2:
+
+```{r}
+tv<-table(df_2b$icO3,df_2b$Vel_cat2)
+tv
+```
+
+```{r}
+tv_rel<-prop.table(tv,1)
+tv_rel
+```
+
+```{r}
+tv_rel_col<-prop.table(tv,2)
+tv_rel_col
+```
+
+```{r}
+barplot(tv_rel_col)
+```
+
+```{r}
+chi.test.tv<-chisq.test(tv)
+print(chi.test.tv)
+```
+
+Visualización y test Chi-cuadrado de Pearson de la relación icO3 - HR:
+
+```{r}
+th<-table(df_2b$icO3,df_2b$HR)
+th
+```
+
+```{r}
+th_rel<-prop.table(th,1)
+th_rel
+```
+
+```{r}
+th_rel_col<-prop.table(th,2)
+th_rel_col
+```
+
+```{r}
+barplot(th_rel_col)
+```
+
+```{r warning=FALSE}
+chi.test.th<-chisq.test(th)
+print(chi.test.th)
+```
+
+Como se puede ver en los test Chi-cuadrado de Pearson, el p_value es prácticamente 0 en los tres casos. Así que rechazamos la hipótesis nula de independencia de variables. Se acepta que existe una relación significativa entre icO3 y cada una de las otras tres variables.
+
+* Cálculo de las OR (Odds-Ratio)
+
+icO3 - RS_cat2:
+
+```{r}
+# Cáculo de las OR
+tr_M<- addmargins(tr, FUN = list(Total = sum), quiet = TRUE)
+tr_M
+p1_tr=((tr_M[2,2]/tr_M[3,2])/(1-(tr_M[2,2]/tr_M[3,2])))
+p2_tr=((tr_M[2,1]/tr_M[3,1])/(1-(tr_M[2,1]/tr_M[3,1])))
+OR_tr=p1_tr/p2_tr
+OR_tr
+```
+
+OR de 3.659214, por lo que se interpreta que las odds de que el índice de calidad del aire basado en O3 sea bueno es 3.659214 veces mayor en valores de Radiación Solar normal_baja que para normal_alta.
+
+icO3 - RS_Vel2:
+
+```{r}
+# Cáculo de las OR
+tv_M<- addmargins(tv, FUN = list(Total = sum), quiet = TRUE)
+tv_M
+p1_tv=((tv_M[2,2]/tv_M[3,2])/(1-(tv_M[2,2]/tv_M[3,2])))
+p2_tv=((tv_M[2,1]/tv_M[3,1])/(1-(tv_M[2,1]/tv_M[3,1])))
+OR_tv=p1_tv/p2_tv
+OR_tv
+```
+
+OR de 2.111013, por lo que se interpreta que las odds de que el índice de calidad del aire basado en O3 sea bueno es 2.111013 veces mayor en valores de Velocidad del viento floja que para moderada.
+
+icO3 - HR:
+
+No se puede seguir el mismo procedimiento para calcular la OR que para las otras dos variables, ya que es una variable continua. Se debería construir un modelo de regresión logística.
 
 ## Modelo de regresión logística
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Estimad el modelo de regresión logística tomando como variable dependiente icO3 y variable explicativa RS_cat2. Calculad la OR a partir de los resultados del modelo y su intervalo de confianza. ¿Se puede considerar que la radiación solar es un factor de riesgo?
 
 ```{r}
-
+logit_model_1 <- glm(formula = icO3~RS_cat2, data=df_2b, family=binomial)
+summary(logit_model_1)
 ```
+
+```{r}
+exp(cbind(coef(logit_model_1),confint(logit_model_1)))
+```
+
+La radiación solar es un factor de riesgo ya que OR es mayor que 1, en concreto 3.65921382.
+
+* Se crea un nuevo modelo con la misma variable dependiente y se añade al apartado a) la variable TMP. Interpretar si nos encontramos o no ante una posible variable de confusión.
+
+```{r}
+logit_model_2 <- glm(formula = icO3~RS_cat2+Tmp, data=df_2b, family=binomial)
+summary(logit_model_2)
+```
+
+```{r}
+exp(coefficients(logit_model_2))
+```
+
+La proximidad de los valores entre la OR estimada de RS_cat2 con el primer modelo (3.65921382) y el modelo ajustado (2.895915576), podría descartar que Tmp sea una variable de confusión.
+
+* Se añade al modelo del apartado a) la variable HR. Estudiar la existencia o no de interacción entre las variables explicativas RS_cat2 y HR. Interpretar.
+
+```{r}
+logit_model_3=glm(formula=icO3~RS_cat2+HR+RS_cat2:HR, data=df_2b, family=binomial(link=logit))
+summary(logit_model_3)
+```
+
+Se observa que el estimador de interacción RS_cat2:HR es estadísticamente significativo.
+
+* Se crea un nuevo modelo con las variables explicativas RS_cat2 y Dir_Aire. ¿Existe una mejora del modelo?
+
+```{r}
+logit_model_4=glm(formula=icO3~RS_cat2+Dir_Aire, data=df_2b, family=binomial)
+summary(logit_model_4)
+```
+
+El indicador AIC= 2089.4 es menor que en los otros modelos, por lo que existe una mejora en el ajuste, aunque no muy grande.
+
 
 ## Predicción
 
