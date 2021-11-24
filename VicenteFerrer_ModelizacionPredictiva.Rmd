@@ -28,56 +28,183 @@ if (!require('ggplot2')) install.packages('ggplot2'); library('ggplot2')
 if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
 # https://cran.r-project.org/web/packages/dplyr/index.html
 if (!require('knitr')) install.packages('knitr'); library('knitr')
+# https://cran.r-project.org/web/packages/corrplot/index.html
+if (!require('corrplot')) install.packages('corrplot'); library('corrplot')
+# https://cran.r-project.org/web/packages/faraway/index.html
+if (!require('faraway')) install.packages('faraway'); library('faraway')
 ```
 
 ******
 # Regresión lineal
 ******
 
+Carga del dataset:
+
+```{r}
+df <- read.csv("./dat_Air.csv", header=TRUE) 
+```
+
+```{r}
+str(df)
+summary(df)
+```
+
 ## Estudio de correlación lineal
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Matriz de correlación:
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./dat_Air.csv", header=TRUE) 
+```{r}
+# Buscamos valores nulos
+sapply(df, function(x) sum(is.na(x)))
+# Eliminamos los valores nulos
+df <- na.omit(df)
 ```
 
-```{r message= FALSE, warning=FALSE}
-str(claim)
-summary(claim)
+```{r}
+# calculamos y representamos la matriz de correlación
+datos_corr <- df[, c(11, 9, 12, 19, 20, 22, 18, 17)]
+M <- cor(datos_corr, method = "pearson")
+corrplot(M, method = "number")
 ```
+
+* ¿Cual de los contaminantes atmosféricos citados anteriormente, tienen una mayor relación lineal con la RS? Interpretar las relaciones de dicho contaminante con la RS y también con el resto de variables meteorológicas.
+El contaminante atmosférico que tiene una mayor relación lineal con RS es O3 ya que, como se puede observar en la matriz de correlación, su coeficiente es el mayor (en valor absoluto). La relación que tienen es en sentido directo y de magnitud débil.
+TMP: relación en sentido directo y de magnitud débil.
+HR: relación en sentido inverso y de magnitud débil.
+Vel: relación en sentido directo y de magnitud moderada.
+Dir_Aire: relación en sentido inverso y de magnitud débil.
+
+* Se toma la media diaria de cada una de las variables del apartado a) y posteriormente se estudia de nuevo la relación pedida en dicho apartado.
+¿Existe alguna diferencia en la relación entre las nuevas variables construidas con los valores medios diarios, con respecto a los resultados obtenidos anteriormente?
+
+Matriz de correlación de las nuevas variables:
+
+```{r}
+# Media diaría de cada variable
+byday = aggregate(df[,c("O3", "NO2", "PM10", "Tmp", "HR", "RS", "Vel", "Dir_Aire")], by = list(df$Fecha), mean)
+# calculamos y representamos la matriz de correlación
+datos_corr <- byday[, c(2:9)]
+M_byday <- cor(datos_corr, method = "pearson")
+corrplot(M_byday, method = "number")
+```
+
+Diferencias entre las dos matrices:
+
+```{r}
+M_dif <- M-M_byday
+corrplot(M_dif, method = "number")
+```
+
+Se pueden observar algunas diferencias significativas.
 
 ## Modelo de regresión lineal
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Estimar por mínimos cuadrados ordinarios un modelo lineal que explique la variable O3 en función de
+la radiación solar (RS). Se evaluará la bondad del ajuste, a partir del coeficiente de determinación.
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```{r}
+Model.1.2.a <- lm(O3~RS, data=df)
+summary(Model.1.2.a)
 ```
+
+El coeficiente de determinación es 0.1381, por lo tanto, la calidad del ajuste es mala. Como era de esperar, ya que la correlación entre ambas variables es débil.
+
+* Modelo de regresión lineal, tomando como variable dependiente (O3) y la variable
+explicativa PM10_cat
+
+Creación de la variable PM10_cat:
+
+```{r}
+PM10_cat <- cut(df$PM10, breaks = c(0, 40, 60, 120, 160, 724),
+                labels = c("Muy buena", "Buena", "Mejorable", "Mala", "Muy mala"),
+                right = FALSE)
+df_1.2 <- data.frame(df, PM10_cat)
+```
+
+Modelo de regresión lineal
+
+```{r}
+Model.1.2.b<- lm(O3~PM10_cat, data=df)
+summary(Model.1.2.b)
+```
+
+El coeficiente de determinación es 0.445, por lo tanto, la calidad del ajuste es baja, a pesar de que la relación entre las variables es moderada.
 
 ## Modelo de regresión lineal múltiple
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+Explicar el nivel de ozono en función de la radiación solar (RS),concentración de dióxido de nitrógeno (NO2), temperatura (Tmp) y dirección del aire (Dir_Aire).
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+* Primero, se añadirá al modelo del apartado a), la variable explicativa (Dir_Aire).¿El modelo ha mejorado?
+
+```{r}
+Model.1.3.a <- lm(O3~RS+Dir_Aire, data=df)
+summary(Model.1.3.a)
 ```
+
+El coeficiente de determinación es 0.2444, por lo tanto, la calidad del ajuste ha aumentado, pero sigue siendo mala.
+
+* Posteriormente se añade al modelo anterior la variable (NO2). ¿Existe una mejora del modelo?
+
+```{r}
+Model.1.3.b <- lm(O3~RS+Dir_Aire+NO2, data=df)
+summary(Model.1.3.b)
+```
+
+El coeficiente de determinación es 0.581, por lo tanto, la calidad del ajuste ha aumentado y es moderada.
+
+* Se toma la variable (Tmp) y se añade al modelo anterior. Se pide comprobar la presencia o no de colinealidad entre las variables (RS) y (Tmp). Según la conclusión obtenida, discutir si sería indicado o no añadir la variable (Tmp) al modelo. De ser afirmativa la respuesta, construye el modelo e interpreta el resultado.
+
+```{r}
+# Coeficiente de correlación entre las variables
+cor(x = df$RS, y = df$Tmp, method = "pearson")
+# comparación de las estimaciones de modelos
+Model.1.3.c <- lm(O3~RS+Dir_Aire+NO2+Tmp, data=df)
+model.RS <- lm(O3~RS, data=df)
+model.Tmp<- lm(O3~Tmp, data=df)
+summary(Model.1.3.c)
+summary(model.RS)
+summary(model.Tmp)
+```
+
+```{r}
+# Cáculo de FIV
+vif(Model.1.3.c)
+# Se compara con 1/(1-R2)
+1/(1-summary(Model.1.3.c)$r.squared)
+```
+
+Por un lado el coeficiente de correlación entre ambas variables es de 0.4, por lo que la relación lineal entre ambas variables es baja. Por otro lado, si comparamos el modelo global, con cada uno de los modelos simples, los coeficientes estimados para RS y Tmp difieren de los estimados con la regresión múltiple.Esto puede ser indicativo de un problema de colinealidad.
+Estudiando la inflación de la varianza y covarianza de las estimaciones, se calcula el FIV(factor de inflación de la varianza), 
+para RS FIV = 1.242683 y para Tmp FIV = 1.369280 resultan menores que su equivalente en el modelo global, 1/(1−R2) = 2.388696. A la vista de los resultados, se encuentran indicios de multicolinealidad entre los regresores ’RS’ y ’Tmp’.
+Por lo tanto, no sería indicado añadir la variable Tmp al modelo.
 
 ## Diagnosis del modelo
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Para la diagnosis se escoge el modelo construído en el apartado b) y se piden dos gráficos: uno con los valores ajustados frente a los residuos (que nos permitirá ver si la varianza es constante) y el gráfico cuantil-cuantil que compara los residuos del modelo con los valores de una variable que se distribuye normalmente(QQ plot). Interpretar los resultados.
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```{r}
+residuos <- rstandard(Model.1.3.b)
+valor.ajustados <- fitted(Model.1.3.b)
+plot(valor.ajustados, residuos)
 ```
+
+```{r}
+qqnorm(residuos)
+```
+
+A la vista del gráfico se observa un patrón de dispersión irregular. Es decir no es un patrón aleatorio de los residuos alrededor de cero, muestra cierto tipo de estructura. Esto indica que no se cumple el supuesto de varianza constante en los errores del modelo.
+Por otro lado el Q_Q plot, muestra que los datos se ajustan bien a una normal.
 
 ## Predicción del modelo
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Según el modelo del apartado c), calcular la concentración de O3, si se tienen valores de RS de 180, NO2 de 15, Dir_Aire de 250 grados y Tmp de 20 grados centígrados.
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```{r}
+newdata = data.frame(RS=180, NO2=15, Dir_Aire=250, Tmp=20)
+predict(Model.1.3.c, newdata)
 ```
+
+Se obtiene un valor de 37.10378 𝜇𝑔/𝑚3.
 
 ******
 # Regresión logística
@@ -87,45 +214,40 @@ claim <- read.csv("./train_clean2.csv", header=TRUE)
 
 * Diagrama de caja de la distribución de la variable 'UltCost':
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
-```
+```{r}
 
-```{r message= FALSE, warning=FALSE}
-str(claim)
-summary(claim)
 ```
 
 ## Modelo de regresión logística
 
 * Diagrama de caja de la distribución de la variable 'UltCost':
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```{r}
+
 ```
 
 ## Predicción
 
 * Diagrama de caja de la distribución de la variable 'UltCost':
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```{r}
+
 ```
 
 ## Bondad del ajuste
 
 * Diagrama de caja de la distribución de la variable 'UltCost':
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```{r}
+
 ```
 
 ## Curva ROC
 
 * Diagrama de caja de la distribución de la variable 'UltCost':
 
-```{r message= FALSE, warning=FALSE}
-claim <- read.csv("./train_clean2.csv", header=TRUE) 
+```{r}
+
 ```
 
 ******
