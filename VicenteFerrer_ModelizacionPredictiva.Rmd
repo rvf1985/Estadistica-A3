@@ -32,6 +32,10 @@ if (!require('knitr')) install.packages('knitr'); library('knitr')
 if (!require('corrplot')) install.packages('corrplot'); library('corrplot')
 # https://cran.r-project.org/web/packages/faraway/index.html
 if (!require('faraway')) install.packages('faraway'); library('faraway')
+# https://cran.r-project.org/web/packages/ResourceSelection/index.html
+if (!require('ResourceSelection')) install.packages('ResourceSelection'); library('ResourceSelection')
+# https://cran.r-project.org/web/packages/pROC/index.html
+if (!require('pROC')) install.packages('pROC'); library('pROC')
 ```
 
 ******
@@ -45,8 +49,11 @@ df <- read.csv("./dat_Air.csv", header=TRUE)
 ```
 
 ```{r}
-str(df)
 summary(df)
+```
+
+```{r}
+str(df)
 ```
 
 ## Estudio de correlación lineal
@@ -54,16 +61,9 @@ summary(df)
 * Matriz de correlación:
 
 ```{r}
-# Buscamos valores nulos
-sapply(df, function(x) sum(is.na(x)))
-# Eliminamos los valores nulos
-df <- na.omit(df)
-```
-
-```{r}
 # calculamos y representamos la matriz de correlación
 datos_corr <- df[, c(11, 9, 12, 19, 20, 22, 18, 17)]
-M <- cor(datos_corr, method = "pearson")
+M <- cor(datos_corr, method = "pearson", use = "pairwise.complete.obs")
 corrplot(M, method = "number")
 ```
 
@@ -84,7 +84,7 @@ Matriz de correlación de las nuevas variables:
 byday = aggregate(df[,c("O3", "NO2", "PM10", "Tmp", "HR", "RS", "Vel", "Dir_Aire")], by = list(df$Fecha), mean)
 # calculamos y representamos la matriz de correlación
 datos_corr <- byday[, c(2:9)]
-M_byday <- cor(datos_corr, method = "pearson")
+M_byday <- cor(datos_corr, method = "pearson", use = "pairwise.complete.obs")
 corrplot(M_byday, method = "number")
 ```
 
@@ -128,7 +128,7 @@ Model.1.2.b<- lm(O3~PM10_cat, data=df)
 summary(Model.1.2.b)
 ```
 
-El coeficiente de determinación es 0.445, por lo tanto, la calidad del ajuste es baja, a pesar de que la relación entre las variables es moderada.
+El coeficiente de determinación es 0.4486, por lo tanto, la calidad del ajuste es baja, a pesar de que la relación entre las variables es moderada.
 
 ## Modelo de regresión lineal múltiple
 
@@ -141,7 +141,7 @@ Model.1.3.a <- lm(O3~RS+Dir_Aire, data=df)
 summary(Model.1.3.a)
 ```
 
-El coeficiente de determinación es 0.2444, por lo tanto, la calidad del ajuste ha aumentado, pero sigue siendo mala.
+El coeficiente de determinación es 0.2457, por lo tanto, la calidad del ajuste ha aumentado, pero sigue siendo mala.
 
 * Posteriormente se añade al modelo anterior la variable (NO2). ¿Existe una mejora del modelo?
 
@@ -150,7 +150,7 @@ Model.1.3.b <- lm(O3~RS+Dir_Aire+NO2, data=df)
 summary(Model.1.3.b)
 ```
 
-El coeficiente de determinación es 0.581, por lo tanto, la calidad del ajuste ha aumentado y es moderada.
+El coeficiente de determinación es 0.5805, por lo tanto, la calidad del ajuste ha aumentado y es moderada.
 
 * Se toma la variable (Tmp) y se añade al modelo anterior. Se pide comprobar la presencia o no de colinealidad entre las variables (RS) y (Tmp). Según la conclusión obtenida, discutir si sería indicado o no añadir la variable (Tmp) al modelo. De ser afirmativa la respuesta, construye el modelo e interpreta el resultado.
 
@@ -204,7 +204,7 @@ newdata = data.frame(RS=180, NO2=15, Dir_Aire=250, Tmp=20)
 predict(Model.1.3.c, newdata)
 ```
 
-Se obtiene un valor de 37.10378 𝜇𝑔/𝑚3.
+Se obtiene un valor de 37.03044 𝜇𝑔/𝑚3.
 
 ******
 # Regresión logística
@@ -215,7 +215,6 @@ Estudio de la concentración de O3 del aire de una determinada ciudad.
 Primera codificación de la variable icO3:
 
 ```{r}
-df <- read.csv("./dat_Air.csv", header=TRUE)
 icO3 <- cut(df$O3, breaks = c(0, 80, 100),
                 labels = c("buena", "mejorable"),
                 right = FALSE)
@@ -413,33 +412,53 @@ El indicador AIC= 2089.4 es menor que en los otros modelos, por lo que existe un
 
 ## Predicción
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Según el modelo del apartado d), calculad la probabilidad de que la concentración de O3 sea o no superior a 80, con unos valores de RS_cat2=“Normal_alta”y Dir_Aire=40:
 
 ```{r}
-
+pred<-predict(logit_model_4, data.frame(RS_cat2="normal_alta",Dir_Aire=40),type = "response")
+pred
 ```
+
+El modelo del apartado d) nos predice una probabilidad del 10% de que la concentración de O3 sea superior a 80 o del 90% de que sea menor, con unos con unos valores de RS_cat2=“normal_alta”y Dir_Aire=40.
 
 ## Bondad del ajuste
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Test de Hosman-Lemeshow para ver la bondad de ajuste, tomando el modelo del apartado d)
 
-```{r}
-
+```{r message=FALSE, warning=FALSE}
+hoslem.test(icO3, fitted(logit_model_4))
 ```
+
+Observando el valor de p-value, rechazamos la hipótesis nula de que el modelo del apartado d) ajusta correctamente los datos.
 
 ## Curva ROC
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+* Dibujar la curva ROC, y calcular el área debajo de la curva con el modelo del apartado d). Discutir el resultado.
 
 ```{r}
-
+prob_low = predict(logit_model_4, df_2b, type="response")
+r = roc(icO3,prob_low, data=df_2b)
+plot(r)
 ```
+
+```{r}
+auc(r)
+```
+
+El área por debajo de esa curva toma el valor de 0.7466, por lo que el modelo discrimina de manera adecuada.
 
 ******
 # Conclusiones del análisis
 ******
 
-* Diagrama de caja de la distribución de la variable 'UltCost':
+En la primera parte se han estudiado las posibles asociaciones lineales entre los contaminantes atmosféricos y las variables meteorológicas. En primer lugar se estudia la correlación lineal mediante la matriz de correlación de las variables y la mayor relación se establece entre la radiación solar (RS) y la concentración de ozono (O3). 
+Tras esto se realizan modelos de regresión lineal para intentar explicar el nivel de ozono en función de la radiación solar o de las partículas en suspensión (PM10), pero se concluye que la calidad de estos ajustes es baja tras observar su coeficiente de determinación.
+A continuación, se busca explicar el nivel de ozono en función de varias variables, radiación solar, concentración de dióxido de nitrógeno (NO2), temperatura (Tmp) y dirección del aire (Dir_Aire), mediante modelos de regresión lineal múltiple. Se va ajustando el modelo añadiendo dichas variables, pero se detectan indicios de multicolinealidad entre RS y Tmp, por lo que no sería indicado añadir esta última. El modelo presenta una calidad del ajuste moderada (coeficiente de determinación = 0.5804).
+
+En una segunda parte, se quiere estudiar la concentración de O3 del aire. Inicialmente se comprueba que, efectivamente, existe una relación significativa entre O3 y cada una de las siguientes variables: RS, velocidad del viento (Vel) y humedad relativa (HR). Tras esto se procede a trabajar el modelo, llegando a la conclusión de que el mejor ajuste se lleva a cabo empleando RS y Dir_Aire. Previamente se ha constatado que RS es un factor de riesgo y que existe interacción entre esta y HR, además, se ha descartado que Tmp sea una variable de confusión. 
+
+Con respecto a la bondad del ajuste, el test de Hosmer-Lemeshow descarta que el modelo ajuste correctamente los datos.
+Por otro lado, del estudio de la curva ROC, se puede deducir que el modelo del apartado d) discrimina de manera adecuada si la concentración de O3 es buena o mejorable. 
 
 ******
 # Bibliografía
